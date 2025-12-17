@@ -8,12 +8,6 @@ import ProjectDescription
 let project = Project(
     name: "LoggerSentry",
     organizationName: "com.logger",
-    packages: [
-        .remote(
-            url: "https://github.com/getsentry/sentry-cocoa",
-            requirement: .upToNextMajor(from: "8.0.0")
-        )
-    ],
     targets: [
         .target(
             name: "LoggerSentry",

@@ -20,9 +20,12 @@ import PackageDescription
 let package = Package(
     name: "Logger",
     dependencies: [
-        // 외부 의존성을 여기에 추가하세요:
-        // .package(url: "https://github.com/Alamofire/Alamofire", from: "5.0.0"),
-        // 자세한 내용은 https://docs.tuist.io/documentation/tuist/dependencies 참조
+        // Firebase SDK
+        .package(url: "https://github.com/firebase/firebase-ios-sdk", from: "10.0.0"),
+        // Sentry SDK
+        .package(url: "https://github.com/getsentry/sentry-cocoa", from: "8.0.0"),
+        // Datadog SDK
+        .package(url: "https://github.com/DataDog/dd-sdk-ios", from: "2.0.0")
     ]
 )
 

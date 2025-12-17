@@ -8,12 +8,6 @@ import ProjectDescription
 let project = Project(
     name: "LoggerFirebase",
     organizationName: "com.logger",
-    packages: [
-        .remote(
-            url: "https://github.com/firebase/firebase-ios-sdk",
-            requirement: .upToNextMajor(from: "10.0.0")
-        )
-    ],
     targets: [
         .target(
             name: "LoggerFirebase",

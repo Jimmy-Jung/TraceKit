@@ -8,12 +8,6 @@ import ProjectDescription
 let project = Project(
     name: "LoggerDatadog",
     organizationName: "com.logger",
-    packages: [
-        .remote(
-            url: "https://github.com/DataDog/dd-sdk-ios",
-            requirement: .upToNextMajor(from: "2.0.0")
-        )
-    ],
     targets: [
         .target(
             name: "LoggerDatadog",
