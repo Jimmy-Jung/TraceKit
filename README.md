@@ -10,6 +10,7 @@ Swift 기반의 유연하고 확장 가능한 iOS 로깅 프레임워크입니�
 - 민감정보 자동 마스킹
 - 로그 샘플링 및 버퍼링
 - 성능 추적 (Performance Tracing)
+- **크래시 로그 보존** (mmap 기반)
 - Launch Argument를 통한 런타임 설정
 - Swift 6.0 / iOS 15.0+
 
@@ -129,6 +130,20 @@ await Logger.shared.info("사용자 이메일: john@example.com")
 
 await Logger.shared.info("카드번호: 1234-5678-9012-3456")
 // 출력: "카드번호: [CREDIT_CARD]"
+```
+
+### 크래시 로그 보존
+
+```swift
+// 크래시 직전 로그를 자동 보존
+let logger = await LoggerBuilder()
+    .withCrashPreservation(count: 50)
+    .buildAsShared()
+
+// 앱 재시작 시 복구
+if let crashLogs = await Logger.shared.recoverCrashLogs() {
+    print("크래시 전 로그 \(crashLogs.count)개 복구됨")
+}
 ```
 
 ## 런타임 설정 (Launch Arguments)
