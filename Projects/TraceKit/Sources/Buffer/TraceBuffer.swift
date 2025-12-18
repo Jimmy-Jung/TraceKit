@@ -18,7 +18,7 @@ public actor TraceBuffer {
     private var autoFlushTask: Task<Void, Never>?
 
     /// 플러시 핸들러
-    private var flushHandler: (([TraceMessage]) async -> Void)?
+    private var flushHandler: (@Sendable ([TraceMessage]) async -> Void)?
 
     public init(policy: TraceBufferPolicy = .default) {
         self.policy = policy
@@ -59,7 +59,7 @@ public actor TraceBuffer {
     }
 
     /// 자동 플러시 시작
-    public func startAutoFlush(handler: @escaping ([TraceMessage]) async -> Void) {
+    public func startAutoFlush(handler: @escaping @Sendable ([TraceMessage]) async -> Void) {
         flushHandler = handler
 
         guard policy.flushInterval > 0 else { return }

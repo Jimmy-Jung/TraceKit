@@ -104,28 +104,6 @@ iOSInjectionProject/
 *.xcodeproj/*
 !*.xcodeproj/project.pbxproj
 !*.xcworkspace/contents.xcworkspacedata
-
-## Tuist
-.tuist-bin/
-.tuist/
-Derived/
-# 생성된 프로젝트 파일 (백업 제외)
-*.xcodeproj
-!*.xcodeproj/project.pbxproj.backup
-*.xcworkspace
-# Tuist 의존성 캐시
-.build/
-
-## Tuist
-.tuist-bin/
-.tuist/
-Derived/
-# 생성된 프로젝트 파일 (백업 제외)
-*.xcodeproj
-!*.xcodeproj/project.pbxproj.backup
-*.xcworkspace
-# Tuist 의존성 캐시
-.build/
 /*.gcno
 
 ### Xcode Patch ###
@@ -142,14 +120,6 @@ Derived/
 
 # Obsidian #
 .obsidian/
- 
-# Tuist cleanup additions
-**/build/
-**/Derived/
-*.backup
-*.test
-*.bak
-
 
 # Build Server #
 buildServer.json

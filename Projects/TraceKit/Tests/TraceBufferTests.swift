@@ -98,9 +98,19 @@ struct TraceBufferTests {
         let policy = TraceBufferPolicy(maxSize: 3, flushInterval: 0, flushOnLevel: nil)
         let buffer = TraceBuffer(policy: policy)
 
-        var flushedCount = 0
+        actor FlushCounter {
+            var count = 0
+            func setCount(_ newCount: Int) {
+                count = newCount
+            }
+            func getCount() -> Int {
+                count
+            }
+        }
+        
+        let counter = FlushCounter()
         await buffer.startAutoFlush { messages in
-            flushedCount = messages.count
+            await counter.setCount(messages.count)
         }
 
         // When
@@ -112,6 +122,7 @@ struct TraceBufferTests {
         try? await Task.sleep(nanoseconds: 100_000_000)
 
         // Then
+        let flushedCount = await counter.getCount()
         #expect(flushedCount == 3)
 
         await buffer.stopAutoFlush()
