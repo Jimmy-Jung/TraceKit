@@ -1,6 +1,11 @@
-# Logger
+# TraceKit
 
-Swift 기반의 유연하고 확장 가능한 iOS 로깅 프레임워크입니다.
+[![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
+[![Platforms](https://img.shields.io/badge/Platforms-iOS%20|%20macOS%20|%20tvOS%20|%20watchOS%20|%20visionOS-lightgrey.svg)](https://www.apple.com)
+[![SPM](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://swift.org/package-manager/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+Swift 기반의 유연하고 확장 가능한 멀티플랫폼 로깅 프레임워크입니다.
 
 ## 주요 기능
 
@@ -19,27 +24,27 @@ Swift 기반의 유연하고 확장 가능한 iOS 로깅 프레임워크입니�
 ### 기본 사용법
 
 ```swift
-import Logger
+import TraceKit
 
 // 기본 로거 사용
 Task {
-    await Logger.shared.info("앱이 시작되었습니다")
-    await Logger.shared.warning("메모리 사용량이 높습니다")
-    await Logger.shared.error("네트워크 연결 실패")
+    await TraceKit.async.info("앱이 시작되었습니다")
+    await TraceKit.async.warning("메모리 사용량이 높습니다")
+    await TraceKit.async.error("네트워크 연결 실패")
 }
 ```
 
 ### 빌더를 사용한 커스텀 설정
 
 ```swift
-import Logger
+import TraceKit
 
 @main
 struct MyApp: App {
     init() {
         Task {
-            let logger = await LoggerBuilder()
-                .addConsole(formatter: PrettyLogFormatter.verbose)
+            let logger = await TraceKitBuilder()
+                .addConsole(formatter: PrettyTraceFormatter.verbose)
                 .addOSLog()
                 .withDefaultSanitizer()
                 .withDefaultContextProvider(environment: .production)
@@ -53,10 +58,10 @@ struct MyApp: App {
 
 ```swift
 // 디버그용 (모든 로그, 컬러풀한 콘솔 출력)
-let debugLogger = await LoggerBuilder.debug().buildAsShared()
+let debugLogger = await TraceKitBuilder.debug().buildAsShared()
 
 // 프로덕션용 (최적화된 설정)
-let prodLogger = await LoggerBuilder.production().buildAsShared()
+let prodLogger = await TraceKitBuilder.production().buildAsShared()
 ```
 
 ## 로그 레벨
@@ -88,16 +93,16 @@ let prodLogger = await LoggerBuilder.production().buildAsShared()
 
 ### 외부 연동 (별도 모듈)
 
-- `LoggerSentry` - Sentry 연동
-- `LoggerDatadog` - Datadog 연동
-- `LoggerFirebase` - Firebase Crashlytics 연동
+- `TraceKitSentry` - Sentry 연동
+- `TraceKitDatadog` - Datadog 연동
+- `TraceKitFirebase` - Firebase Crashlytics 연동
 
 ## 고급 기능
 
 ### 메타데이터 추가
 
 ```swift
-await Logger.shared.info(
+await TraceKit.async.info(
     "사용자 로그인 성공",
     category: "Auth",
     metadata: [
@@ -111,24 +116,24 @@ await Logger.shared.info(
 
 ```swift
 // 자동 측정
-let result = await Logger.shared.measure(name: "데이터 로딩") {
+let result = await TraceKit.async.measure(name: "데이터 로딩") {
     await loadData()
 }
 
 // 수동 측정
-let spanId = await Logger.shared.startSpan(name: "복잡한 작업")
+let spanId = await TraceKit.async.startSpan(name: "복잡한 작업")
 // ... 작업 수행 ...
-await Logger.shared.endSpan(id: spanId)
+await TraceKit.async.endSpan(id: spanId)
 ```
 
 ### 민감정보 마스킹
 
 ```swift
 // 자동으로 마스킹됨
-await Logger.shared.info("사용자 이메일: john@example.com")
+await TraceKit.async.info("사용자 이메일: john@example.com")
 // 출력: "사용자 이메일: [EMAIL]"
 
-await Logger.shared.info("카드번호: 1234-5678-9012-3456")
+await TraceKit.async.info("카드번호: 1234-5678-9012-3456")
 // 출력: "카드번호: [CREDIT_CARD]"
 ```
 
@@ -136,12 +141,12 @@ await Logger.shared.info("카드번호: 1234-5678-9012-3456")
 
 ```swift
 // 크래시 직전 로그를 자동 보존
-let logger = await LoggerBuilder()
+let logger = await TraceKitBuilder()
     .withCrashPreservation(count: 50)
     .buildAsShared()
 
 // 앱 재시작 시 복구
-if let crashLogs = await Logger.shared.recoverCrashLogs() {
+if let crashLogs = await TraceKit.async.recoverCrashLogs() {
     print("크래시 전 로그 \(crashLogs.count)개 복구됨")
 }
 ```
@@ -159,9 +164,51 @@ Xcode에서 다음 launch argument로 로거를 제어할 수 있습니다:
 
 ## 설치
 
+### Swift Package Manager (권장)
+
+#### Xcode에서 설치
+
+1. Xcode에서 File > Add Package Dependencies...
+2. 다음 URL 입력:
+```
+https://github.com/jimmy/TraceKit
+```
+3. 버전 규칙 선택 (예: "Up to Next Major Version" - 1.0.0)
+4. 필요한 패키지 선택:
+   - `TraceKit` - 코어 로깅 프레임워크 (필수)
+   - `TraceKitDatadog` - Datadog 연동 (선택)
+   - `TraceKitFirebase` - Firebase 연동 (선택)
+   - `TraceKitSentry` - Sentry 연동 (선택)
+
+#### Package.swift에서 설치
+
+```swift
+// Package.swift
+dependencies: [
+    .package(url: "https://github.com/jimmy/TraceKit", from: "1.0.0")
+],
+targets: [
+    .target(
+        name: "MyApp",
+        dependencies: [
+            .product(name: "TraceKit", package: "TraceKit"),
+            // 필요한 경우 연동 모듈 추가
+            // .product(name: "TraceKitDatadog", package: "TraceKit"),
+            // .product(name: "TraceKitFirebase", package: "TraceKit"),
+            // .product(name: "TraceKitSentry", package: "TraceKit")
+        ]
+    )
+]
+```
+
 ### Tuist
 
 ```swift
+// Package.swift (Tuist 의존성)
+dependencies: [
+    .package(url: "https://github.com/jimmy/TraceKit", from: "1.0.0")
+]
+
 // Project.swift
 let project = Project(
     name: "MyApp",
@@ -169,7 +216,7 @@ let project = Project(
         .target(
             name: "MyApp",
             dependencies: [
-                .project(target: "Logger", path: "../Logger")
+                .package(product: "TraceKit")
             ]
         )
     ]
@@ -190,10 +237,141 @@ let project = Project(
 ## 요구사항
 
 - iOS 15.0+
+- macOS 12.0+
+- tvOS 15.0+
+- watchOS 8.0+
+- visionOS 1.0+
 - Swift 6.0+
 - Xcode 16.0+
+
+## 플랫폼별 특징
+
+| 플랫폼 | Console | OSLog | File | 외부 연동 | 특이사항 |
+|--------|---------|-------|------|----------|---------|
+| iOS | ✅ | ✅ | ✅ | ✅ | 전체 기능 지원 |
+| macOS | ✅ | ✅ | ✅ | ✅ | ~/Library/Logs에 저장 |
+| tvOS | ✅ | ✅ | ✅ | ✅ | 전체 기능 지원 |
+| watchOS | ✅ | ✅ | ⚠️ | ✅ | 제한된 저장 공간 |
+| visionOS | ✅ | ✅ | ✅ | ✅ | 전체 기능 지원 |
+
+⚠️ watchOS는 저장 공간이 제한적이므로 파일 로그 사용 시 retentionPolicy 설정 권장
 
 ## 라이선스
 
 MIT License
+
+---
+
+## 플랫폼별 사용 예시
+
+### macOS
+
+```swift
+import TraceKit
+
+@main
+struct MyMacApp: App {
+    init() {
+        Task {
+            let logger = await TraceKitBuilder()
+                .addConsole()
+                .addOSLog()
+                .addFile() // ~/Library/Logs/BundleID/에 저장
+                .buildAsShared()
+        }
+    }
+    
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}
+```
+
+### watchOS
+
+```swift
+import TraceKit
+
+@main
+struct MyWatchApp: App {
+    init() {
+        Task {
+            // watchOS는 저장 공간이 제한적이므로 보관 정책 설정
+            let retentionPolicy = TraceFileRetentionPolicy(
+                retentionDays: 3,
+                maxFileSize: 512 * 1024, // 512KB
+                maxTotalSize: 2 * 1024 * 1024 // 2MB
+            )
+            
+            let logger = await TraceKitBuilder()
+                .addConsole()
+                .addOSLog()
+                .addFile(retentionPolicy: retentionPolicy)
+                .buildAsShared()
+        }
+    }
+    
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}
+```
+
+### tvOS
+
+```swift
+import TraceKit
+
+@main
+struct MyTVApp: App {
+    init() {
+        Task {
+            let logger = await TraceKitBuilder()
+                .addConsole()
+                .addOSLog()
+                .buildAsShared()
+            
+            await TraceKit.async.info("tvOS 앱 시작", category: "App")
+        }
+    }
+    
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}
+```
+
+### visionOS
+
+```swift
+import TraceKit
+
+@main
+struct MyVisionApp: App {
+    init() {
+        Task {
+            let logger = await TraceKitBuilder()
+                .addConsole()
+                .addOSLog()
+                .addFile()
+                .withDefaultSanitizer()
+                .buildAsShared()
+            
+            await TraceKit.async.info("visionOS 앱 시작", category: "App")
+        }
+    }
+    
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}
+```
 

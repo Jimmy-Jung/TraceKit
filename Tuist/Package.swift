@@ -1,6 +1,6 @@
 // swift-tools-version: 6.0
 // Package.swift
-// Logger
+// TraceKit
 //
 // Created by jimmy on 2025-12-15.
 
@@ -18,7 +18,7 @@ import PackageDescription
 #endif
 
 let package = Package(
-    name: "Logger",
+    name: "TraceKit",
     dependencies: [
         // Firebase SDK
         .package(url: "https://github.com/firebase/firebase-ios-sdk", from: "10.0.0"),
