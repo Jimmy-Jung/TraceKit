@@ -152,6 +152,9 @@ public final class TraceKitBuilder: @unchecked Sendable {
 
         let logger = TraceKit(configuration: finalConfig)
 
+        // PerformanceTracer logHandler 설정
+        logger.setupPerformanceTracer()
+
         // Destinations 추가
         for destination in destinations {
             logger.addDestination(destination)

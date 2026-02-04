@@ -65,7 +65,22 @@ public final class TraceKit {
 
     public init(configuration: TraceKitConfiguration = .default) {
         self.configuration = configuration
-        tracer = PerformanceTracer()
+        tracer = PerformanceTracer(category: "Performance")
+    }
+
+    /// PerformanceTracer logHandler 설정 (내부 전용)
+    func setupPerformanceTracer() {
+        tracer = PerformanceTracer(
+            category: "Performance",
+            logHandler: { @TraceKitActor level, message, category, metadata in
+                await self.log(
+                    level: level,
+                    message,
+                    category: category,
+                    metadata: metadata
+                )
+            }
+        )
     }
 
     // MARK: - Configuration

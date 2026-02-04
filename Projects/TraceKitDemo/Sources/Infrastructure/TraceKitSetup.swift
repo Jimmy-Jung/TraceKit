@@ -3,13 +3,12 @@
 //
 // Created by jimmy on 2025-12-15.
 
-import Foundation
-import TraceKit
+import FirebaseAnalytics
 import FirebaseCore
 import FirebaseCrashlytics
-import FirebaseAnalytics
-// import FirebasePerformance // 임시 비활성화
 import FirebaseRemoteConfig
+import Foundation
+import TraceKit
 
 /// TraceKit 초기화 설정
 ///
@@ -52,7 +51,7 @@ import FirebaseRemoteConfig
 enum TraceKitSetup {
     /// 공유 CrashTracePreserver 인스턴스
     static let crashPreserver = CrashTracePreserver(preserveCount: 100)
-    
+
     /// Remote Config 관리자
     static let remoteConfigManager = FirebaseRemoteConfigManager()
 
@@ -64,21 +63,21 @@ enum TraceKitSetup {
     /// - Important: MainActor에서 실행되어야 합니다.
     @MainActor
     static func configure() async {
-        // Firebase 초기화
-        configureFirebase()
-        
-        // Remote Config 가져오기
-        await remoteConfigManager.fetchAndActivate()
-        
+        // Firebase 초기화 (임시 비활성화 - GoogleService-Info.plist 설정 필요)
+        // configureFirebase()
+
+        // Remote Config 가져오기 (Firebase 비활성화 시 주석 처리)
+        // await remoteConfigManager.fetchAndActivate()
+
         // 이전 크래시 확인
         await checkPreviousCrash()
 
         let stream = TraceStream.shared
         let inMemoryDestination = InMemoryTraceDestination(stream: stream)
-        
-        // Firebase Destinations
-        let crashlyticsDestination = FirebaseCrashlyticsTraceDestination()
-        let analyticsDestination = FirebaseAnalyticsTraceDestination()
+
+        // Firebase Destinations (Firebase 비활성화 시 주석 처리)
+        // let crashlyticsDestination = FirebaseCrashlyticsTraceDestination()
+        // let analyticsDestination = FirebaseAnalyticsTraceDestination()
 
         _ = await TraceKitBuilder()
             .addOSLog(
@@ -90,23 +89,25 @@ enum TraceKitSetup {
                 retentionPolicy: .default
             )
             .addDestination(inMemoryDestination)
-            .addDestination(crashlyticsDestination)
-            .addDestination(analyticsDestination)
+            // .addDestination(crashlyticsDestination)
+            // .addDestination(analyticsDestination)
             .with(configuration: .debug)
             .withDefaultSanitizer()
             .buildAsShared()
-        
-        // Remote Config 설정 적용
-        await remoteConfigManager.applyToTraceKit()
-        
-        // Remote Config 실시간 업데이트 활성화
-        await remoteConfigManager.startRealtimeUpdates()
-        print("✅ [Remote Config] 실시간 업데이트 활성화")
+
+        // Remote Config 설정 적용 (Firebase 비활성화 시 주석 처리)
+        // await remoteConfigManager.applyToTraceKit()
+
+        // Remote Config 실시간 업데이트 활성화 (Firebase 비활성화 시 주석 처리)
+        // await remoteConfigManager.startRealtimeUpdates()
+        // print("✅ [Remote Config] 실시간 업데이트 활성화")
+
+        print("✅ [TraceKit] 초기화 완료 (Firebase 비활성화 모드)")
 
         // Signal Handler 등록 (전역 mmap 포인터 사용)
         // registerSignalHandlers()
     }
-    
+
     /// Firebase 초기화
     ///
     /// GoogleService-Info.plist를 사용하여 Firebase를 구성합니다.
@@ -115,7 +116,7 @@ enum TraceKitSetup {
     private static func configureFirebase() {
         FirebaseApp.configure()
         print("✅ [Firebase] 초기화 완료")
-        
+
         // Crashlytics 활성화
         Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
         print("✅ [Firebase Crashlytics] 활성화")
