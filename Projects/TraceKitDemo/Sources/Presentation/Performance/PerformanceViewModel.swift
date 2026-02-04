@@ -3,9 +3,9 @@
 //
 // Created by jimmy on 2025-12-15.
 
+import FirebasePerformance
 import Foundation
 import TraceKit
-import FirebasePerformance
 
 @MainActor
 final class PerformanceViewModel: ObservableObject {
@@ -26,19 +26,30 @@ final class PerformanceViewModel: ObservableObject {
         isRunning = true
         currentOperation = "measure() 시연 중..."
 
-        let spanId = await TraceKit.async.tracer.startSpan(name: "데이터 로딩 시뮬레이션")
+        let startTime = Date()
 
-        await simulateNetworkRequest(delay: 1.5)
+        // TraceKit.async.measure() 메서드 사용 예시
+        // - 자동으로 성능 측정 시작/종료
+        // - 결과를 자동으로 로깅
+        // - 작업 결과를 반환
+        do {
+            let result = try await TraceKit.async.measure(name: "데이터 로딩 시뮬레이션") {
+                await simulateNetworkRequest(delay: 1.5)
+                return "시뮬레이션 완료"
+            }
 
-        let completedSpan = await TraceKit.async.tracer.endSpan(id: spanId)
+            TraceKit.info("measure() 결과: \(result)", category: "Performance")
 
-        let duration = completedSpan?.durationMs.map { $0 / 1000.0 } ?? 1.5
-        let result = MeasurementResult(
-            name: "데이터 로딩 시뮬레이션",
-            duration: duration,
-            timestamp: Date()
-        )
-        results.insert(result, at: 0)
+            let duration = Date().timeIntervalSince(startTime)
+            let measurementResult = MeasurementResult(
+                name: "measure() - 데이터 로딩",
+                duration: duration,
+                timestamp: Date()
+            )
+            results.insert(measurementResult, at: 0)
+        } catch {
+            TraceKit.error("measure() 실패: \(error.localizedDescription)", category: "Performance")
+        }
 
         isRunning = false
         currentOperation = ""
@@ -118,10 +129,10 @@ final class PerformanceViewModel: ObservableObject {
 
         // Simulate heavy computation
         await withTaskGroup(of: Void.self) { group in
-            for i in 1 ... 5 {
+            for index in 1 ... 5 {
                 group.addTask {
                     await self.simulateProcessing(delay: 0.3)
-                    TraceKit.debug("서브태스크 \(i) 완료", category: "Performance")
+                    TraceKit.debug("서브태스크 \(index) 완료", category: "Performance")
                 }
             }
         }
@@ -139,16 +150,16 @@ final class PerformanceViewModel: ObservableObject {
         isRunning = false
         currentOperation = ""
     }
-    
+
     // MARK: - Firebase Performance Demo
-    
+
     func runFirebasePerformanceDemo() async {
         isRunning = true
         currentOperation = "Firebase Performance 시연 중..."
-        
+
         do {
             let startTime = Date()
-            
+
             // FirebasePerformanceHelper를 사용한 성능 추적
             let data = try await FirebasePerformanceHelper.trace(
                 name: "firebase_demo_operation"
@@ -156,56 +167,56 @@ final class PerformanceViewModel: ObservableObject {
                 await simulateNetworkRequest(delay: 1.0)
                 return "Demo Data"
             }
-            
+
             let duration = Date().timeIntervalSince(startTime)
-            
+
             TraceKit.info(
                 "Firebase Performance 데이터 전송 완료: \(data)",
                 category: "Performance"
             )
-            
+
             let result = MeasurementResult(
                 name: "Firebase Performance 추적",
                 duration: duration,
                 timestamp: Date()
             )
             results.insert(result, at: 0)
-            
+
         } catch {
             TraceKit.error(
                 "Firebase Performance 실패: \(error.localizedDescription)",
                 category: "Performance"
             )
         }
-        
+
         isRunning = false
         currentOperation = ""
     }
-    
+
     func runSpanWithFirebaseDemo() async {
         isRunning = true
         currentOperation = "TraceSpan + Firebase Performance 시연 중..."
-        
+
         let startTime = Date()
-        
+
         // TraceKit의 TraceSpan 사용
         let spanId = await TraceKit.async.tracer.startSpan(name: "user_data_fetch")
-        
+
         // 네트워크 요청 시뮬레이션
         await simulateNetworkRequest(delay: 1.5)
-        
+
         // Span 종료
         if let span = await TraceKit.async.tracer.endSpan(id: spanId) {
             // Firebase Performance로 전송
             await span.sendToFirebasePerformance()
-            
+
             let duration = Date().timeIntervalSince(startTime)
-            
+
             TraceKit.info(
                 "TraceSpan + Firebase Performance 기록 완료",
                 category: "Performance"
             )
-            
+
             let result = MeasurementResult(
                 name: "TraceSpan + Firebase",
                 duration: duration,
@@ -213,7 +224,7 @@ final class PerformanceViewModel: ObservableObject {
             )
             results.insert(result, at: 0)
         }
-        
+
         isRunning = false
         currentOperation = ""
     }

@@ -64,10 +64,28 @@ public actor PerformanceTracer {
     }
 
     /// 측정 블록 실행
+    ///
+    /// 비동기 작업의 성능을 자동으로 측정하고 로깅합니다.
+    ///
     /// - Parameters:
     ///   - name: Span 이름
-    ///   - operation: 측정할 작업
+    ///   - operation: 측정할 비동기 작업
     /// - Returns: 작업 결과
+    ///
+    /// - Example:
+    /// ```swift
+    /// let clubMembers = try await TraceKit.async.measure(
+    ///     name: "열공클럽 멤버 리스트"
+    /// ) {
+    ///     try await StudyClubService.shared.getClubMemList(
+    ///         seq: code,
+    ///         studyClub.SCI_Extent01,
+    ///         studyClub.SCI_Extent03,
+    ///         subjects: subjects
+    ///     )
+    /// }
+    /// // 자동으로 "[열공클럽 멤버 리스트] completed in XXms" 로그가 출력됩니다
+    /// ```
     public func measure<T: Sendable>(
         name: String,
         operation: @Sendable () async throws -> T

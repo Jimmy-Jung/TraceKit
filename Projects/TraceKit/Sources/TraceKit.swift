@@ -81,13 +81,13 @@ public final class TraceKit {
     public func configure(_ newConfiguration: TraceKitConfiguration) {
         let oldConfiguration = configuration
         configuration = newConfiguration
-        
+
         // 샘플러 업데이트 (새 샘플링 비율로 재생성)
         if sampler != nil {
             let newPolicy = SamplingPolicy(defaultRate: newConfiguration.sampleRate)
             sampler = TraceSampler(policy: newPolicy)
         }
-        
+
         // 버퍼 정책 업데이트
         if let buffer = buffer {
             Task {
@@ -97,7 +97,7 @@ public final class TraceKit {
                 }
             }
         }
-        
+
         // 설정 변경 로깅
         Task { @TraceKitActor in
             await self.info(
@@ -109,7 +109,7 @@ public final class TraceKit {
                     "old_sample_rate": AnyCodable(oldConfiguration.sampleRate),
                     "new_sample_rate": AnyCodable(newConfiguration.sampleRate),
                     "old_sanitizer": AnyCodable(oldConfiguration.isSanitizingEnabled),
-                    "new_sanitizer": AnyCodable(newConfiguration.isSanitizingEnabled)
+                    "new_sanitizer": AnyCodable(newConfiguration.isSanitizingEnabled),
                 ]
             )
         }
@@ -350,6 +350,28 @@ public final class TraceKit {
     }
 
     /// 측정 블록 실행
+    ///
+    /// 비동기 작업의 성능을 자동으로 측정하고 로깅합니다.
+    ///
+    /// - Parameters:
+    ///   - name: Span 이름
+    ///   - operation: 측정할 비동기 작업
+    /// - Returns: 작업 결과
+    ///
+    /// - Example:
+    /// ```swift
+    /// let clubMembers = try await TraceKit.async.measure(
+    ///     name: "열공클럽 멤버 리스트"
+    /// ) {
+    ///     try await StudyClubService.shared.getClubMemList(
+    ///         seq: code,
+    ///         studyClub.SCI_Extent01,
+    ///         studyClub.SCI_Extent03,
+    ///         subjects: subjects
+    ///     )
+    /// }
+    /// // 자동으로 "[열공클럽 멤버 리스트] completed in XXms" 로그가 출력됩니다
+    /// ```
     public func measure<T: Sendable>(
         name: String,
         operation: @Sendable () async throws -> T
