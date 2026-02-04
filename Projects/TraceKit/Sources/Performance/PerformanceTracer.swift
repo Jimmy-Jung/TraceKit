@@ -74,17 +74,12 @@ public actor PerformanceTracer {
     ///
     /// - Example:
     /// ```swift
-    /// let clubMembers = try await TraceKit.async.measure(
-    ///     name: "열공클럽 멤버 리스트"
+    /// let users = try await TraceKit.async.measure(
+    ///     name: "사용자 목록 조회"
     /// ) {
-    ///     try await StudyClubService.shared.getClubMemList(
-    ///         seq: code,
-    ///         studyClub.SCI_Extent01,
-    ///         studyClub.SCI_Extent03,
-    ///         subjects: subjects
-    ///     )
+    ///     try await apiService.fetchUsers()
     /// }
-    /// // 자동으로 "[열공클럽 멤버 리스트] completed in XXms" 로그가 출력됩니다
+    /// // 자동으로 "[사용자 목록 조회] completed in XXms" 로그가 출력됩니다
     /// ```
     public func measure<T: Sendable>(
         name: String,
