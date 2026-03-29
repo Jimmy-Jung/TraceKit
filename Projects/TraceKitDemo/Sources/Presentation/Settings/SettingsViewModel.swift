@@ -91,8 +91,14 @@ final class SettingsViewModel: ObservableObject {
     
     func loadRemoteConfigStatus() {
         Task {
-            let manager = TraceKitSetup.remoteConfigManager
-            
+            guard let manager = TraceKitSetup.remoteConfigManager else {
+                remoteMinLevel = "-"
+                remoteSamplingRate = "-"
+                remoteConfigStatus = "Firebase 미설정"
+                remoteConfigLastFetch = "-"
+                return
+            }
+
             remoteMinLevel = await manager.minimumTraceLevel.name
             remoteSamplingRate = String(format: "%.2f", await manager.samplingRate)
             remoteConfigStatus = "로드됨"
@@ -105,7 +111,12 @@ final class SettingsViewModel: ObservableObject {
         remoteConfigStatus = "가져오는 중..."
         
         Task {
-            let manager = TraceKitSetup.remoteConfigManager
+            guard let manager = TraceKitSetup.remoteConfigManager else {
+                remoteConfigStatus = "Firebase 미설정"
+                isRefreshingConfig = false
+                return
+            }
+
             let success = await manager.fetchAndActivate()
             
             if success {

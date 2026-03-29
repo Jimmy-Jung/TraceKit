@@ -108,6 +108,9 @@ public actor CrashTracePreserver {
     /// 로그 기록
     public func record(_ message: TraceMessage) {
         ringBuffer.append(message)
+
+        // 최근 로그를 즉시 스냅샷으로 남겨야 다음 실행에서 실제 복구가 가능하다.
+        try? persist()
     }
 
     /// 현재 버퍼를 파일에 저장 (크래시 전 호출)
@@ -144,11 +147,20 @@ public actor CrashTracePreserver {
             try fm.removeItem(at: storageURL)
         }
         ringBuffer.clear()
+        clearMmapData()
     }
 
     /// 리소스 정리 (수동 호출 필요)
     public func cleanup() {
         cleanupMmap()
+    }
+
+    /// 현재 preserver의 mmap 포인터로 시그널 핸들러를 설치
+    public func installSignalHandlers() {
+        Self.registerSignalHandlersUnsafe(
+            mmapPtr: mmapPtr,
+            mmapSize: mmapSize
+        )
     }
 
     /// 현재 버퍼 내용 확인

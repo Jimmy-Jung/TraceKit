@@ -45,6 +45,7 @@ actor FirebasePerformanceTraceDestination: TraceDestination {
     ///
     /// - Parameter message: 기록할 TraceMessage
     func log(_ message: TraceMessage) async {
+        guard await FirebaseIntegrationRuntime.shared.isPerformanceEnabled() else { return }
         guard shouldLog(message) else { return }
 
         // Performance 카테고리만 처리
@@ -88,6 +89,8 @@ actor FirebasePerformanceTraceDestination: TraceDestination {
         name: String,
         metadata: [String: AnyCodable]
     ) async {
+        guard await FirebaseIntegrationRuntime.shared.isPerformanceEnabled() else { return }
+
         let sanitizedName = sanitizeTraceName(name)
 
         guard let trace = Performance.startTrace(name: sanitizedName) else {
@@ -197,5 +200,19 @@ actor FirebasePerformanceTraceDestination: TraceDestination {
         }
 
         return nil
+    }
+}
+
+actor FirebaseIntegrationRuntime {
+    static let shared = FirebaseIntegrationRuntime()
+
+    private var performanceEnabled: Bool = true
+
+    func setPerformanceEnabled(_ enabled: Bool) {
+        performanceEnabled = enabled
+    }
+
+    func isPerformanceEnabled() -> Bool {
+        performanceEnabled
     }
 }

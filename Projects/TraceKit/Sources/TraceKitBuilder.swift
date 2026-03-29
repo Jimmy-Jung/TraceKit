@@ -18,6 +18,7 @@ public final class TraceKitBuilder: @unchecked Sendable {
     private var contextProvider: (any UserContextProvider)?
     private var useDefaultContextProvider: Environment?
     private var crashPreserveCount: Int?
+    private var crashPreserver: CrashTracePreserver?
     private var applyLaunchArgs: Bool = false
 
     // MARK: - Init
@@ -129,6 +130,15 @@ public final class TraceKitBuilder: @unchecked Sendable {
     @discardableResult
     public func withCrashPreservation(count: Int = 50) -> Self {
         crashPreserveCount = count
+        crashPreserver = nil
+        return self
+    }
+
+    /// 외부에서 생성한 크래시 보존기 주입
+    @discardableResult
+    public func withCrashPreserver(_ preserver: CrashTracePreserver) -> Self {
+        crashPreserver = preserver
+        crashPreserveCount = nil
         return self
     }
 
@@ -183,9 +193,12 @@ public final class TraceKitBuilder: @unchecked Sendable {
         }
 
         // 크래시 보존기 설정
-        if let crashPreserveCount = crashPreserveCount {
-            let crashPreserver = CrashTracePreserver(preserveCount: crashPreserveCount)
+        if let crashPreserver = crashPreserver {
             logger.setCrashPreserver(crashPreserver)
+        } else if let crashPreserveCount = crashPreserveCount {
+            logger.setCrashPreserver(
+                CrashTracePreserver(preserveCount: crashPreserveCount)
+            )
         }
 
         return logger

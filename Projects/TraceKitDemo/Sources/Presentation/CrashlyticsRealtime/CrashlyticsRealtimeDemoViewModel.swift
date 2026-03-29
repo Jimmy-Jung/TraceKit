@@ -283,7 +283,7 @@ final class CrashlyticsRealtimeDemoViewModel: ObservableObject {
         }
         
         // 실제 백그라운드 전환 유도
-        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+        if UIApplication.shared.connectedScenes.first is UIWindowScene {
             // 사용자에게 백그라운드 전환 안내
             Task { @MainActor in
                 // UI에서 안내 표시

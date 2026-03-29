@@ -32,9 +32,10 @@ final class RemoteConfigControlViewModel: ObservableObject {
     @Published var lastFetchStatus: FetchStatus = .idle
     @Published var errorMessage: String?
     @Published var isRealtimeEnabled: Bool = false
+    @Published var isRemoteConfigAvailable: Bool = false
     
     // TraceKitSetup의 공유 인스턴스 사용
-    private var remoteConfigManager: FirebaseRemoteConfigManager {
+    private var remoteConfigManager: FirebaseRemoteConfigManager? {
         TraceKitSetup.remoteConfigManager
     }
     
@@ -70,8 +71,6 @@ final class RemoteConfigControlViewModel: ObservableObject {
         // 초기 설정 로드
         Task {
             await loadCurrentConfig()
-            // 실시간 업데이트는 TraceKitSetup에서 이미 시작됨
-            isRealtimeEnabled = true
         }
         
         // Remote Config 업데이트 알림 구독
@@ -111,6 +110,13 @@ final class RemoteConfigControlViewModel: ObservableObject {
     
     /// 현재 Remote Config 설정 로드
     func loadCurrentConfig() async {
+        guard let remoteConfigManager else {
+            applyUnavailableState()
+            return
+        }
+
+        isRemoteConfigAvailable = true
+        errorMessage = nil
         let snapshot = RemoteConfigSnapshot(
             minLevel: await remoteConfigManager.minimumTraceLevel,
             samplingRate: await remoteConfigManager.samplingRate,
@@ -122,46 +128,47 @@ final class RemoteConfigControlViewModel: ObservableObject {
         )
         
         currentConfig = snapshot
+        isRealtimeEnabled = true
     }
     
     /// Remote Config 새로고침 (Fetch & Activate)
     /// 캐시를 무시하고 서버에서 즉시 최신 설정을 가져옵니다.
     func fetchAndActivate() async {
+        guard let remoteConfigManager else {
+            applyUnavailableState()
+            return
+        }
+
         isFetching = true
         lastFetchStatus = .fetching
         errorMessage = nil
-        
-        do {
-            // 캐시 무시하고 즉시 가져오기
-            let success = await remoteConfigManager.fetchAndActivateImmediately()
-            
-            if success {
-                lastFetchStatus = .success
-                await loadCurrentConfig()
-                
-                // 현재 시간을 lastFetchTime으로 설정
-                if var config = currentConfig {
-                    config = RemoteConfigSnapshot(
-                        minLevel: config.minLevel,
-                        samplingRate: config.samplingRate,
-                        isCrashlyticsEnabled: config.isCrashlyticsEnabled,
-                        isAnalyticsEnabled: config.isAnalyticsEnabled,
-                        isPerformanceEnabled: config.isPerformanceEnabled,
-                        isSanitizerEnabled: config.isSanitizerEnabled,
-                        lastFetchTime: Date()
-                    )
-                    currentConfig = config
-                }
-                
-                // TraceKit에 즉시 적용
-                await remoteConfigManager.applyToTraceKit()
-            } else {
-                lastFetchStatus = .failed
-                errorMessage = "설정을 가져오는데 실패했습니다"
+
+        // 캐시 무시하고 즉시 가져오기
+        let success = await remoteConfigManager.fetchAndActivateImmediately()
+
+        if success {
+            lastFetchStatus = .success
+            await loadCurrentConfig()
+
+            // 현재 시간을 lastFetchTime으로 설정
+            if var config = currentConfig {
+                config = RemoteConfigSnapshot(
+                    minLevel: config.minLevel,
+                    samplingRate: config.samplingRate,
+                    isCrashlyticsEnabled: config.isCrashlyticsEnabled,
+                    isAnalyticsEnabled: config.isAnalyticsEnabled,
+                    isPerformanceEnabled: config.isPerformanceEnabled,
+                    isSanitizerEnabled: config.isSanitizerEnabled,
+                    lastFetchTime: Date()
+                )
+                currentConfig = config
             }
-        } catch {
+
+            // TraceKit에 즉시 적용
+            await remoteConfigManager.applyToTraceKit()
+        } else {
             lastFetchStatus = .failed
-            errorMessage = error.localizedDescription
+            errorMessage = "설정을 가져오는데 실패했습니다"
         }
         
         isFetching = false
@@ -171,6 +178,22 @@ final class RemoteConfigControlViewModel: ObservableObject {
         if lastFetchStatus != .fetching {
             lastFetchStatus = .idle
         }
+    }
+
+    private func applyUnavailableState() {
+        isRemoteConfigAvailable = false
+        isRealtimeEnabled = false
+        lastFetchStatus = .idle
+        errorMessage = "Firebase가 설정되지 않아 Remote Config를 사용할 수 없습니다."
+        currentConfig = RemoteConfigSnapshot(
+            minLevel: .debug,
+            samplingRate: 1.0,
+            isCrashlyticsEnabled: false,
+            isAnalyticsEnabled: false,
+            isPerformanceEnabled: false,
+            isSanitizerEnabled: true,
+            lastFetchTime: nil
+        )
     }
     
     /// 긴급 디버깅 모드 시나리오

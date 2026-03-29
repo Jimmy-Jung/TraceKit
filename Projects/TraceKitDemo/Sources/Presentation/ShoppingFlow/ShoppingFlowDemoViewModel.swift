@@ -171,7 +171,7 @@ final class ShoppingFlowDemoViewModel: ObservableObject {
         firebaseStatus.crashlyticsBreadcrumbCount += 1
 
         // Performance Trace 종료 (자동으로 Firebase Performance에 전송됨)
-        if let span = await TraceKit.async.tracer.endSpan(id: checkoutSpanId) {
+        if await TraceKit.async.tracer.endSpan(id: checkoutSpanId) != nil {
             firebaseStatus.performanceTraceCompleted = true
             firebaseStatus.traceDuration = Date().timeIntervalSince(startTime)
         }
