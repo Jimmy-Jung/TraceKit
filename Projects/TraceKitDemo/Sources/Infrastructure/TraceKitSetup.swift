@@ -52,9 +52,23 @@ import FirebaseRemoteConfig
 enum TraceKitSetup {
     /// 공유 CrashTracePreserver 인스턴스
     static let crashPreserver = CrashTracePreserver(preserveCount: 100)
-    
+    @MainActor
+    private(set) static var isFirebaseConfigured: Bool = false
+
+    @MainActor
+    private static var cachedRemoteConfigManager: FirebaseRemoteConfigManager?
+
     /// Remote Config 관리자
-    static let remoteConfigManager = FirebaseRemoteConfigManager()
+    @MainActor
+    static var remoteConfigManager: FirebaseRemoteConfigManager? {
+        guard isFirebaseConfigured else { return nil }
+
+        if cachedRemoteConfigManager == nil {
+            cachedRemoteConfigManager = FirebaseRemoteConfigManager()
+        }
+
+        return cachedRemoteConfigManager
+    }
 
     /// TraceKit 초기화
     ///
@@ -65,10 +79,19 @@ enum TraceKitSetup {
     @MainActor
     static func configure() async {
         // Firebase 초기화
-        configureFirebase()
+        let isFirebaseConfigured = configureFirebase()
+        Self.isFirebaseConfigured = isFirebaseConfigured
+
+        if !isFirebaseConfigured {
+            cachedRemoteConfigManager = nil
+        }
+
+        await FirebaseIntegrationRuntime.shared.setPerformanceEnabled(isFirebaseConfigured)
         
         // Remote Config 가져오기
-        await remoteConfigManager.fetchAndActivate()
+        if let remoteConfigManager = remoteConfigManager {
+            await remoteConfigManager.fetchAndActivate()
+        }
         
         // 이전 크래시 확인
         await checkPreviousCrash()
@@ -76,11 +99,7 @@ enum TraceKitSetup {
         let stream = TraceStream.shared
         let inMemoryDestination = InMemoryTraceDestination(stream: stream)
         
-        // Firebase Destinations
-        let crashlyticsDestination = FirebaseCrashlyticsTraceDestination()
-        let analyticsDestination = FirebaseAnalyticsTraceDestination()
-
-        _ = await TraceKitBuilder()
+        let builder = TraceKitBuilder()
             .addOSLog(
                 subsystem: "com.tracekit.TraceKitDemo",
                 formatter: PrettyTraceFormatter.verbose
@@ -90,21 +109,30 @@ enum TraceKitSetup {
                 retentionPolicy: .default
             )
             .addDestination(inMemoryDestination)
-            .addDestination(crashlyticsDestination)
-            .addDestination(analyticsDestination)
             .with(configuration: .debug)
             .withDefaultSanitizer()
-            .buildAsShared()
+            .withCrashPreserver(crashPreserver)
+
+        if isFirebaseConfigured {
+            builder
+                .addDestination(FirebaseCrashlyticsTraceDestination())
+                .addDestination(FirebaseAnalyticsTraceDestination())
+        }
+
+        _ = await builder.buildAsShared()
+        await crashPreserver.installSignalHandlers()
         
         // Remote Config 설정 적용
-        await remoteConfigManager.applyToTraceKit()
-        
-        // Remote Config 실시간 업데이트 활성화
-        await remoteConfigManager.startRealtimeUpdates()
-        print("✅ [Remote Config] 실시간 업데이트 활성화")
+        if let remoteConfigManager = remoteConfigManager {
+            await remoteConfigManager.applyToTraceKit()
+            
+            // Remote Config 실시간 업데이트 활성화
+            await remoteConfigManager.startRealtimeUpdates()
+            print("✅ [Remote Config] 실시간 업데이트 활성화")
+        }
 
         // Signal Handler 등록 (전역 mmap 포인터 사용)
-        // registerSignalHandlers()
+        print("✅ [CrashTracePreserver] 시그널 핸들러 설치 완료")
     }
     
     /// Firebase 초기화
@@ -112,13 +140,21 @@ enum TraceKitSetup {
     /// GoogleService-Info.plist를 사용하여 Firebase를 구성합니다.
     /// Crashlytics와 Analytics를 활성화합니다.
     @MainActor
-    private static func configureFirebase() {
-        FirebaseApp.configure()
-        print("✅ [Firebase] 초기화 완료")
+    private static func configureFirebase() -> Bool {
+        guard Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil else {
+            print("ℹ️ [Firebase] GoogleService-Info.plist 없음, Firebase 연동 비활성화")
+            return false
+        }
+
+        if FirebaseApp.app() == nil {
+            FirebaseApp.configure()
+            print("✅ [Firebase] 초기화 완료")
+        }
         
         // Crashlytics 활성화
         Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
         print("✅ [Firebase Crashlytics] 활성화")
+        return true
     }
 
     /// 이전 크래시 확인 및 로그 복구
@@ -146,9 +182,9 @@ enum TraceKitSetup {
     /// - Warning: 프로덕션에서 사용 시 주의 필요
     @MainActor
     static func registerSignalHandlers() {
-        // CrashTracePreserver.registerSignalHandlersUnsafe(...)
-        // 주의: Actor의 mmap 포인터에 직접 접근할 수 없으므로
-        // 실제 구현 시 전역 변수나 다른 방법 필요
+        Task {
+            await crashPreserver.installSignalHandlers()
+        }
     }
 
     /// 로그 파일 디렉토리 URL

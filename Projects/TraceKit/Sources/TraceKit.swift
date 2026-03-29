@@ -121,10 +121,23 @@ public final class TraceKit {
     }
 
     /// Destination 제거
-    public func removeDestination(identifier _: String) {
-        destinations.removeAll { _ in
-            // Actor isolated property 접근을 위해 Task 사용
-            false // 실제로는 identifier 비교 필요
+    public func removeDestination(identifier: String) {
+        // 즉시 비활성화해 이후 로그 fan-out에서 빠지게 하고,
+        // 뒤에서 실제 배열에서도 정리한다.
+        configuration.disabledDestinations.insert(identifier)
+
+        Task { @TraceKitActor in
+            var remainingDestinations: [any TraceDestination] = []
+            remainingDestinations.reserveCapacity(destinations.count)
+
+            for destination in destinations {
+                let currentIdentifier = await destination.identifier
+                if currentIdentifier != identifier {
+                    remainingDestinations.append(destination)
+                }
+            }
+
+            destinations = remainingDestinations
         }
     }
 

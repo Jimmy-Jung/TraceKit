@@ -20,17 +20,6 @@ let project = Project(
             deploymentTargets: .iOS("15.0"),
             infoPlist: .extendingDefault(
                 with: [
-                    "UIApplicationSceneManifest": [
-                        "UIApplicationSupportsMultipleScenes": false,
-                        "UISceneConfigurations": [
-                            "UIWindowSceneSessionRoleApplication": [
-                                [
-                                    "UISceneConfigurationName": "Default Configuration",
-                                    "UISceneDelegateClassName": "$(PRODUCT_MODULE_NAME).SceneDelegate"
-                                ]
-                            ]
-                        ]
-                    ],
                     "UILaunchScreen": [:],
                     "UISupportedInterfaceOrientations": [
                         "UIInterfaceOrientationPortrait",
@@ -122,13 +111,23 @@ let project = Project(
                     "SWIFT_VERSION": "5.10",
                     "TARGETED_DEVICE_FAMILY": "1,2",
                     // Firebase 필수 링커 플래그 - Objective-C 카테고리 메서드 링크
-                    "OTHER_LDFLAGS": "$(inherited) -ObjC",
-                    // dSYM 파일 항상 생성 (Crashlytics 심볼 업로드용)
-                    "DEBUG_INFORMATION_FORMAT": "dwarf-with-dsym"
+                    "OTHER_LDFLAGS": "$(inherited) -ObjC"
                 ],
                 configurations: [
-                    .debug(name: .debug),
-                    .release(name: .release)
+                    .debug(
+                        name: .debug,
+                        settings: [
+                            // Debug는 실행 속도와 심볼 디버깅을 우선한다.
+                            "DEBUG_INFORMATION_FORMAT": "dwarf"
+                        ]
+                    ),
+                    .release(
+                        name: .release,
+                        settings: [
+                            // Release만 dSYM을 생성해 Crashlytics 심볼 업로드에 사용한다.
+                            "DEBUG_INFORMATION_FORMAT": "dwarf-with-dsym"
+                        ]
+                    )
                 ]
             )
         )
@@ -151,4 +150,3 @@ let project = Project(
         )
     ]
 )
-

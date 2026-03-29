@@ -168,6 +168,7 @@ actor FirebaseRemoteConfigManager {
     /// Remote Config의 값을 읽어 TraceKit 동작을 동적으로 변경합니다.
     func applyToTraceKit() async {
         let config = buildTraceKitConfiguration()
+        await FirebaseIntegrationRuntime.shared.setPerformanceEnabled(isPerformanceEnabled)
         
         // TraceKit 런타임 설정 업데이트
         await TraceKit.async.configure(config)
@@ -181,9 +182,19 @@ actor FirebaseRemoteConfigManager {
         let minLevel = minimumTraceLevel
         let samplingRate = self.samplingRate
         let sanitizerEnabled = self.isSanitizerEnabled
+        var disabledDestinations: Set<String> = []
+
+        if !isCrashlyticsEnabled {
+            disabledDestinations.insert("firebase.crashlytics")
+        }
+
+        if !isAnalyticsEnabled {
+            disabledDestinations.insert("firebase.analytics")
+        }
         
         return TraceKitConfiguration(
             minLevel: minLevel,
+            disabledDestinations: disabledDestinations,
             isSanitizingEnabled: sanitizerEnabled,
             sampleRate: samplingRate,
             bufferSize: 1000

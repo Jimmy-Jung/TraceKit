@@ -26,7 +26,7 @@ final class CrashDemoViewModel: ObservableObject {
     // MARK: - Initialization
 
     init() {
-        preserver = CrashTracePreserver(preserveCount: 50)
+        preserver = TraceKitSetup.crashPreserver
 
         Task {
             await checkPreviousCrash()

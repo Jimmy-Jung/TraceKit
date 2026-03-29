@@ -30,6 +30,10 @@ extension TraceSpan {
     /// 완료된 span의 성능 데이터를 Firebase Performance에 기록합니다.
     /// span이 아직 진행 중이면 자동으로 종료합니다.
     func sendToFirebasePerformance() async {
+        guard await FirebaseIntegrationRuntime.shared.isPerformanceEnabled() else {
+            return
+        }
+
         guard let trace = Performance.startTrace(name: sanitizeTraceName(name)) else {
             return
         }
@@ -136,6 +140,21 @@ enum FirebasePerformanceHelper {
         operation: () async throws -> T
     ) async throws -> T {
         let spanId = await TraceKit.async.startSpan(name: name)
+
+        guard await FirebaseIntegrationRuntime.shared.isPerformanceEnabled() else {
+            do {
+                let result = try await operation()
+                await TraceKit.async.endSpan(id: spanId)
+                return result
+            } catch {
+                await TraceKit.async.endSpan(
+                    id: spanId,
+                    metadata: ["error": AnyCodable(error.localizedDescription)]
+                )
+                throw error
+            }
+        }
+
         guard let firebaseTrace = Performance.startTrace(name: name) else {
             // Firebase trace 생성 실패 시에도 TraceKit span은 계속 진행
             defer {
@@ -158,5 +177,19 @@ enum FirebasePerformanceHelper {
             firebaseTrace.stop()
             throw error
         }
+    }
+}
+
+actor FirebaseIntegrationRuntime {
+    static let shared = FirebaseIntegrationRuntime()
+
+    private var performanceEnabled: Bool = true
+
+    func setPerformanceEnabled(_ enabled: Bool) {
+        performanceEnabled = enabled
+    }
+
+    func isPerformanceEnabled() -> Bool {
+        performanceEnabled
     }
 }

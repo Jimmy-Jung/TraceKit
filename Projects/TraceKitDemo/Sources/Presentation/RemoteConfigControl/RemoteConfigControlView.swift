@@ -91,16 +91,16 @@ struct RemoteConfigControlView: View {
                         Image(systemName: "arrow.clockwise")
                     }
                     Text("지금 새로고침")
-                }
-                .font(Theme.Typography.body)
-                .foregroundColor(Theme.Colors.background)
-                .frame(maxWidth: .infinity)
-                .padding(Theme.Spacing.md)
-                .background(Theme.Colors.accent)
-                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.md))
+            }
+            .font(Theme.Typography.body)
+            .foregroundColor(Theme.Colors.background)
+            .frame(maxWidth: .infinity)
+            .padding(Theme.Spacing.md)
+            .background(Theme.Colors.accent)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.md))
             }
             .buttonStyle(.plain)
-            .disabled(viewModel.isFetching)
+            .disabled(viewModel.isFetching || !viewModel.isRemoteConfigAvailable)
             
             HStack(spacing: Theme.Spacing.xs) {
                 Image(systemName: "clock")
@@ -129,6 +129,15 @@ struct RemoteConfigControlView: View {
                     Text(viewModel.errorMessage ?? "설정을 가져오는데 실패했습니다")
                         .font(Theme.Typography.caption)
                         .foregroundColor(Theme.Colors.error)
+                }
+            } else if !viewModel.isRemoteConfigAvailable {
+                HStack(spacing: Theme.Spacing.xs) {
+                    Image(systemName: "info.circle.fill")
+                        .foregroundColor(Theme.Colors.textSecondary)
+
+                    Text(viewModel.errorMessage ?? "Firebase 설정이 없어 Remote Config가 비활성화되었습니다")
+                        .font(Theme.Typography.caption)
+                        .foregroundColor(Theme.Colors.textSecondary)
                 }
             }
         }
@@ -237,7 +246,7 @@ struct RemoteConfigControlView: View {
                         "성능 데이터 수집 및 비교",
                         "최적값 결정 후 전체 배포"
                     ],
-                    icon: "ab.circle",
+                    icon: "square.split.2x1",
                     color: Theme.Colors.info
                 ) {
                     viewModel.demonstrateABTest()
