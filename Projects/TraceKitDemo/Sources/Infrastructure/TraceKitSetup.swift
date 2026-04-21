@@ -9,6 +9,7 @@ import FirebaseCrashlytics
 import FirebaseRemoteConfig
 import Foundation
 import TraceKit
+import TraceKitFirebase
 
 /// TraceKit 초기화 설정
 ///

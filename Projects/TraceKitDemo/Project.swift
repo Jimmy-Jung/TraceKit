@@ -97,6 +97,7 @@ let project = Project(
             ],
             dependencies: [
                 .package(product: "TraceKit", type: .runtime),
+                .package(product: "TraceKitFirebase", type: .runtime),
                 .external(name: "FirebaseCrashlytics"),
                 .external(name: "FirebaseAnalytics"),
                 .external(name: "FirebasePerformance"),

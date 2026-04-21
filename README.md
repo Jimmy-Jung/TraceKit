@@ -105,16 +105,26 @@ let prodLogger = await TraceKitBuilder.production().buildAsShared()
 - `OSTraceDestination` - Apple os.log 시스템
 - `FileTraceDestination` - 파일 저장
 
-### Firebase 통합 (데모 앱 포함)
+### Firebase 통합
 
-TraceKitDemo에서 Firebase 4대 서비스와의 통합 구현을 제공합니다:
+`TraceKitFirebase` product에서 Crashlytics 연동 Destination을 제공합니다.
+TraceKitDemo는 Analytics, Performance, Remote Config 데모 구현도 함께 포함합니다.
 
-- `FirebaseAnalyticsTraceDestination` - Analytics 이벤트 전송
-- `FirebaseCrashlyticsTraceDestination` - Crashlytics 연동
-- `FirebasePerformanceTraceDestination` - Performance 모니터링
-- `FirebaseRemoteConfigManager` - 원격 설정 관리
+- `FirebaseCrashlyticsTraceDestination` - Crashlytics breadcrumb / non-fatal error 전송
+- `FirebaseAnalyticsTraceDestination` - Analytics 이벤트 전송 (데모 앱 구현)
+- `FirebasePerformanceTraceDestination` - Performance 모니터링 (데모 앱 구현)
+- `FirebaseRemoteConfigManager` - 원격 설정 관리 (데모 앱 구현)
 
-자세한 사용법은 [Firebase 통합 가이드](./Projects/TraceKitDemo/FIREBASE_MODULES_GUIDE.md)를 참고하세요.
+```swift
+import TraceKit
+import TraceKitFirebase
+
+let logger = await TraceKitBuilder()
+    .addDestination(FirebaseCrashlyticsTraceDestination())
+    .buildAsShared()
+```
+
+자세한 사용법은 [외부 연동 문서](./Documents/05-외부-연동.md)를 참고하세요.
 
 ## 고급 기능
 
@@ -511,4 +521,3 @@ struct MyVisionApp: App {
     }
 }
 ```
-

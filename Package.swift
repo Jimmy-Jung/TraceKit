@@ -20,9 +20,16 @@ let package = Package(
         .library(
             name: "TraceKit",
             targets: ["TraceKit"]
+        ),
+        // Firebase 연동 Destination 모듈
+        .library(
+            name: "TraceKitFirebase",
+            targets: ["TraceKitFirebase"]
         )
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/firebase/firebase-ios-sdk", from: "11.0.0")
+    ],
     targets: [
         // MARK: - Core TraceKit Target
         .target(
@@ -33,12 +40,32 @@ let package = Package(
                 "Crash/CRASH_PRESERVER_GUIDE.md"
             ]
         ),
+
+        // MARK: - Firebase Integration Target
+        .target(
+            name: "TraceKitFirebase",
+            dependencies: [
+                "TraceKit",
+                .product(name: "FirebaseCrashlytics", package: "firebase-ios-sdk")
+            ],
+            path: "Projects/TraceKitFirebase/Sources"
+        ),
         
         // MARK: - TraceKit Tests
         .testTarget(
             name: "TraceKitTests",
             dependencies: ["TraceKit"],
             path: "Projects/TraceKit/Tests"
+        ),
+
+        // MARK: - TraceKitFirebase Tests
+        .testTarget(
+            name: "TraceKitFirebaseTests",
+            dependencies: [
+                "TraceKit",
+                "TraceKitFirebase"
+            ],
+            path: "Projects/TraceKitFirebase/Tests"
         )
     ]
 )
