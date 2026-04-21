@@ -75,6 +75,23 @@ struct FirebaseCrashlyticsTraceDestinationTests {
         #expect(error.domain == "com.example.app.crashlytics.Auth")
     }
 
+    @Test("category는 NSError domain에 안전한 문자열로 정규화된다")
+    func categoryIsSanitizedForErrorDomain() async throws {
+        let spy = SpyCrashlyticsRecording()
+        let destination = FirebaseCrashlyticsTraceDestination(crashlytics: spy)
+
+        await destination.log(Self.makeMessage(level: .error, category: "결제 / API Error!", text: "failed"))
+
+        let error = try #require(spy.errors.first)
+        #expect(error.domain == "com.tracekit.firebase.crashlytics.API_Error")
+        #expect(error.userInfo["category"] as? String == "결제 / API Error!")
+    }
+
+    @Test("category 정규화 결과가 비어 있으면 uncategorized를 사용한다")
+    func emptySanitizedCategoryUsesFallback() {
+        #expect(FirebaseCrashlyticsTraceDestination.sanitizeCategoryForDomain("!!!") == "uncategorized")
+    }
+
     @Test("같은 정규화 메시지는 같은 error code를 사용한다")
     func sameNormalizedMessageUsesSameCode() async {
         let spy = SpyCrashlyticsRecording()

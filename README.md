@@ -108,6 +108,7 @@ let prodLogger = await TraceKitBuilder.production().buildAsShared()
 ### Firebase 통합
 
 `TraceKitFirebase` product에서 Crashlytics 연동 Destination을 제공합니다.
+이 product는 Firebase SDK 의존성을 별도 target으로 격리하지만, 같은 package 안에 있으므로 SwiftPM package resolution 단계에서는 Firebase dependency graph를 함께 해석합니다.
 TraceKitDemo는 Analytics, Performance, Remote Config 데모 구현도 함께 포함합니다.
 
 - `FirebaseCrashlyticsTraceDestination` - Crashlytics breadcrumb / non-fatal error 전송

@@ -57,7 +57,7 @@ public actor FirebaseCrashlyticsTraceDestination: TraceDestination {
     private func recordError(_ message: TraceMessage) {
         let normalizedMessage = Self.normalizeMessage(message.message)
         let error = NSError(
-            domain: "\(errorDomainPrefix).\(message.category)",
+            domain: "\(errorDomainPrefix).\(Self.sanitizeCategoryForDomain(message.category))",
             code: Self.stableCode(from: normalizedMessage),
             userInfo: [
                 NSLocalizedDescriptionKey: message.message,
@@ -114,6 +114,19 @@ public actor FirebaseCrashlyticsTraceDestination: TraceDestination {
         )
 
         return result
+    }
+
+    /// NSError domain에 안전하게 포함할 수 있도록 category를 정규화합니다.
+    public nonisolated static func sanitizeCategoryForDomain(_ category: String) -> String {
+        let truncated = String(category.prefix(120))
+        let sanitized = truncated.replacingOccurrences(
+            of: #"[^A-Za-z0-9._-]"#,
+            with: "_",
+            options: .regularExpression
+        )
+        let trimmed = sanitized.trimmingCharacters(in: CharacterSet(charactersIn: "._-"))
+
+        return trimmed.isEmpty ? "uncategorized" : trimmed
     }
 
     /// deterministic error code. Crashlytics grouping 보조 정보로 사용합니다.
